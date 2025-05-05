@@ -32,9 +32,9 @@ const (
 	TypeTrapezoidAlt     = "trapezoid alt"
 
 	//Styles
-	StyleDotted          = "stroke-dasharray: 5 5"
-	StyleFillTransparent = "transparent"
-	StyleStrokeTransparent
+	StyleDotted            = "stroke-dasharray: 5 5"
+	StyleFillTransparent   = "fill: transparent"
+	StyleStrokeTransparent = "stroke: transparent"
 )
 
 func RenderFlowchartNodes(nodes []core.NodeRenderer, sb *strings.Builder) {
