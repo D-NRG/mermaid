@@ -2,7 +2,7 @@ package node
 
 import (
 	"fmt"
-	"mermaid/diagram/core"
+	"github.com/D-NRG/mermaid/diagram/core"
 	"sort"
 	"strings"
 )

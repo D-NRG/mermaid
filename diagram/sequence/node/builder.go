@@ -1,7 +1,7 @@
 package node
 
 import (
-	"mermaid/diagram/core"
+	"github.com/D-NRG/mermaid/diagram/core"
 )
 
 type SequenceNodeBuilder struct {

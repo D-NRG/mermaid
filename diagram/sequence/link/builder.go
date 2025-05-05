@@ -1,7 +1,7 @@
 package link
 
 import (
-	"mermaid/diagram/core"
+	"github.com/D-NRG/mermaid/diagram/core"
 )
 
 type SequenceLinkBuilder struct {

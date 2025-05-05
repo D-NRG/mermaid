@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"mermaid/diagram"
-	"mermaid/diagram/core"
-	"mermaid/diagram/flowchart/link"
-	"mermaid/diagram/flowchart/node"
-	links "mermaid/diagram/sequence/link"
-	nodes "mermaid/diagram/sequence/node"
+	"github.com/D-NRG/mermaid/diagram"
+	"github.com/D-NRG/mermaid/diagram/core"
+	"github.com/D-NRG/mermaid/diagram/flowchart/link"
+	"github.com/D-NRG/mermaid/diagram/flowchart/node"
+	links "github.com/D-NRG/mermaid/diagram/sequence/link"
+	nodes "github.com/D-NRG/mermaid/diagram/sequence/node"
 )
 
 func main() {

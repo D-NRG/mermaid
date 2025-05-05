@@ -2,9 +2,9 @@ package diagram
 
 import (
 	"fmt"
-	"mermaid/diagram/core"
-	nodef "mermaid/diagram/flowchart/node"
-	nodes "mermaid/diagram/sequence/node"
+	"github.com/D-NRG/mermaid/diagram/core"
+	nodef "github.com/D-NRG/mermaid/diagram/flowchart/node"
+	nodes "github.com/D-NRG/mermaid/diagram/sequence/node"
 	"os"
 	"regexp"
 	"strings"
