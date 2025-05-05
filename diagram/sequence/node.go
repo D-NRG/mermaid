@@ -1,10 +1,13 @@
-package node
+// Package sequence defines renderable nodes for sequence diagrams,
+// supporting participant labeling and optional grouping into boxes.
+package sequence
 
 import (
 	"fmt"
-	"github.com/D-NRG/mermaid/diagram/core"
 	"sort"
 	"strings"
+
+	"github.com/D-NRG/mermaid/diagram/core"
 )
 
 type (
@@ -17,6 +20,7 @@ type (
 
 func RenderSequenceNodes(nodes []core.NodeRenderer, sb *strings.Builder) {
 	grouped := make(map[string][]*NodeSequence)
+
 	var ungrouped []*NodeSequence
 
 	for _, node := range nodes {
@@ -37,13 +41,16 @@ func RenderSequenceNodes(nodes []core.NodeRenderer, sb *strings.Builder) {
 	for name := range grouped {
 		groupNames = append(groupNames, name)
 	}
+
 	sort.Strings(groupNames)
 
 	for _, group := range groupNames {
-		fmt.Fprintf(sb, "box %s\n", group)
+		_, _ = fmt.Fprintf(sb, "box %s\n", group)
+
 		for _, node := range grouped[group] {
 			node.render(sb)
 		}
+
 		sb.WriteString("end\n\n")
 	}
 }
@@ -55,8 +62,8 @@ func (n *NodeSequence) render(sb *strings.Builder) {
 	}
 
 	if label != n.ID {
-		fmt.Fprintf(sb, "\tparticipant %s as %s\n", n.ID, label)
+		_, _ = fmt.Fprintf(sb, "\tparticipant %s as %s\n", n.ID, label)
 	} else {
-		fmt.Fprintf(sb, "\tparticipant %s\n", n.ID)
+		_, _ = fmt.Fprintf(sb, "\tparticipant %s\n", n.ID)
 	}
 }

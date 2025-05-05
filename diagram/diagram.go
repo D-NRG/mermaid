@@ -1,13 +1,19 @@
+// Package diagram defines the main entry point for rendering Mermaid diagrams.
+// It supports flowchart and sequence diagram types and includes helpers for
+// integrating diagram output into markdown files like README.md.
 package diagram
 
 import (
+	"errors"
 	"fmt"
-	"github.com/D-NRG/mermaid/diagram/core"
-	nodef "github.com/D-NRG/mermaid/diagram/flowchart/node"
-	nodes "github.com/D-NRG/mermaid/diagram/sequence/node"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/D-NRG/mermaid/diagram/core"
+	"github.com/D-NRG/mermaid/diagram/flowchart"
+	"github.com/D-NRG/mermaid/diagram/sequence"
 )
 
 type (
@@ -21,6 +27,7 @@ type (
 const (
 	TypeFlowChart = "flowchart"
 	TypeSequence  = "sequence"
+	fileMode      = 0o600
 )
 
 func (d *Diagram) Render() (string, error) {
@@ -34,46 +41,67 @@ func (d *Diagram) Render() (string, error) {
 }
 
 func (d *Diagram) RenderUpdateREADME(readmePath string) error {
-	var sb strings.Builder
+	//nolint:err113 // single use
+	errInvalidReadMe := errors.New("invalid file: only README.md is allowed")
+	//nolint:err113 // single use
+	errMissingMermaidMarkers := errors.New("README does not contain required markers:" +
+		" <!-- BEGIN_MERMAID --> ... <!-- END_MERMAID -->")
 
-	if err := d.typeDiagram(&sb); err != nil {
-		return err
+	absPath, err := filepath.Abs(readmePath)
+	if err != nil {
+		return fmt.Errorf("resolve path: %w", err)
 	}
 
-	content, err := os.ReadFile(readmePath)
+	if filepath.Base(absPath) != "README.md" {
+		return fmt.Errorf("%w, got %s", errInvalidReadMe, filepath.Base(absPath))
+	}
+
+	var sb strings.Builder
+	if errType := d.typeDiagram(&sb); errType != nil {
+		return errType
+	}
+
+	//nolint:gosec //readmePath is validated to point only to a README.md file,
+	// avoiding path traversal or arbitrary file access
+	content, err := os.ReadFile(absPath)
 	if err != nil {
 		return fmt.Errorf("read file: %w", err)
 	}
 
 	re := regexp.MustCompile(`(?s)(<!-- BEGIN_MERMAID -->).*?(<!-- END_MERMAID -->)`)
 	if !re.Match(content) {
-		return fmt.Errorf("README does not contain required markers: <!-- BEGIN_MERMAID --> ... <!-- END_MERMAID -->")
+		return errMissingMermaidMarkers
 	}
 
 	newContent := re.ReplaceAllString(string(content), "$1\n"+sb.String()+"$2")
 
-	if err = os.WriteFile(readmePath, []byte(newContent), 0644); err != nil {
+	if err = os.WriteFile(absPath, []byte(newContent), fileMode); err != nil {
 		return fmt.Errorf("write file: %w", err)
 	}
 
 	return nil
 }
+
 func (d *Diagram) typeDiagram(sb *strings.Builder) error {
+	//nolint:err113 //single use
+	errInvalidDiagramType := errors.New("invalid diagram type")
+
 	switch d.Type {
-	case "sequence":
+	case TypeSequence:
 		d.renderSequenceDiagram(sb)
-	case "flowchart":
+	case TypeFlowChart:
 		d.renderFlowchart(sb)
 	default:
-		return fmt.Errorf("invalid diagram type: %s", d.Type)
+		return fmt.Errorf("%w: %s", errInvalidDiagramType, d.Type)
 	}
+
 	return nil
 }
 
 func (d *Diagram) renderFlowchart(sb *strings.Builder) {
 	sb.WriteString("```mermaid\nflowchart TD\n\n")
 
-	nodef.RenderFlowchartNodes(d.Nodes, sb)
+	flowchart.RenderFlowchartNodes(d.Nodes, sb)
 
 	for _, link := range d.Links {
 		link.Render(sb)
@@ -85,7 +113,7 @@ func (d *Diagram) renderFlowchart(sb *strings.Builder) {
 func (d *Diagram) renderSequenceDiagram(sb *strings.Builder) {
 	sb.WriteString("```mermaid\nsequenceDiagram\n\n")
 
-	nodes.RenderSequenceNodes(d.Nodes, sb)
+	sequence.RenderSequenceNodes(d.Nodes, sb)
 
 	for _, link := range d.Links {
 		link.Render(sb)

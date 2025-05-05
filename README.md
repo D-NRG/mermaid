@@ -1,6 +1,6 @@
 <!-- BEGIN_MERMAID -->
 ```mermaid
-flowchart RL
+flowchart TD
 
 	subgraph API
 

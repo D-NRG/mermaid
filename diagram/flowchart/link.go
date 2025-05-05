@@ -1,4 +1,6 @@
-package link
+// Package flowchart defines types and rendering logic for flowchart links.
+// It supports various link topologies such as chains, one-to-many, many-to-one, and grouped links.
+package flowchart
 
 import (
 	"fmt"
@@ -16,20 +18,7 @@ type (
 	FlowchartStyle string
 )
 
-const (
-	StandardArrow      FlowchartStyle = "-->"
-	StandardTwiceArrow FlowchartStyle = "<-->"
-	WithoutArrow       FlowchartStyle = "---"
-	XArrow             FlowchartStyle = "--x"
-	XTwiceArrow        FlowchartStyle = "x--x"
-	OArrow             FlowchartStyle = "--o"
-	OTwiceArrow        FlowchartStyle = "o--o"
-	Dotted             FlowchartStyle = "-.->"
-	DottedTwice        FlowchartStyle = "<-.->"
-	BoldArrow          FlowchartStyle = "==>"
-	BoldArrowTwice     FlowchartStyle = "<==>"
-	Invisible          FlowchartStyle = "~~~"
-)
+const ampersand = " & "
 
 func (l *FlowchartLink) Render(sb *strings.Builder) {
 	if len(l.From) == 0 || len(l.To) == 0 {
@@ -51,27 +40,31 @@ func (l *FlowchartLink) Render(sb *strings.Builder) {
 }
 
 func (l *FlowchartLink) renderGroupLink(sb *strings.Builder) {
-	fmt.Fprintf(sb, "\t%s %s %s\n",
-		strings.Join(l.From, " & "),
+	_, _ = fmt.Fprintf(sb, "\t%s %s %s\n",
+		strings.Join(l.From, ampersand),
 		l.DefaultStyle,
-		strings.Join(l.To, " & "))
+		strings.Join(l.To, ampersand))
 }
 
 func (l *FlowchartLink) renderChainLink(sb *strings.Builder) {
 	var chain []string
 	chain = append(chain, l.From[0])
-	for i := 0; i < len(l.From); i++ {
+
+	for i := range len(l.From) {
 		style := l.DefaultStyle
 		if len(l.Styles) > i && l.Styles[i] != "" {
 			style = l.Styles[i]
 		}
+
 		label := ""
 		if len(l.Labels) > i && l.Labels[i] != "" {
-			label = fmt.Sprintf(`|"%s"|`, l.Labels[i])
+			label = fmt.Sprintf("|%q|", l.Labels[i])
 		}
+
 		chain = append(chain, fmt.Sprintf("%s%s%s", style, label, l.To[i]))
 	}
-	fmt.Fprintf(sb, "\t%s\n", strings.Join(chain, ""))
+
+	_, _ = fmt.Fprintf(sb, "\t%s\n", strings.Join(chain, ""))
 }
 
 func (l *FlowchartLink) renderOneToManyLink(sb *strings.Builder) {
@@ -85,9 +78,10 @@ func (l *FlowchartLink) renderManyToOneLink(sb *strings.Builder) {
 func (l *FlowchartLink) renderSingleLink(sb *strings.Builder) {
 	label := ""
 	if len(l.Labels) > 0 && l.Labels[0] != "" {
-		label = fmt.Sprintf(`|"%s"|`, l.Labels[0])
+		label = fmt.Sprintf("|%q|", l.Labels[0])
 	}
-	fmt.Fprintf(sb, "\t%s %s%s %s\n",
+
+	_, _ = fmt.Fprintf(sb, "\t%s %s%s %s\n",
 		l.From[0],
 		l.DefaultStyle,
 		label,
@@ -98,11 +92,13 @@ func (l *FlowchartLink) isChain() bool {
 	if len(l.From) != len(l.To) || len(l.From) < 2 {
 		return false
 	}
+
 	for i := 1; i < len(l.From); i++ {
 		if l.From[i] != l.To[i-1] {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -114,46 +110,71 @@ func (l *FlowchartLink) renderGroupedLink(
 ) {
 	switch {
 	case len(l.Labels) > 1:
-		var count int
-		if isManyToOne {
-			count = len(heads)
-		} else {
-			count = len(tails)
-		}
-
-		for i := 0; i < count; i++ {
-			head := heads[0]
-			tail := tails[0]
-			if isManyToOne {
-				head = heads[i]
-			} else if i < len(tails) {
-				tail = tails[i]
-			}
-
-			style := l.DefaultStyle
-			if i < len(l.Styles) && l.Styles[i] != "" {
-				style = l.Styles[i]
-			}
-
-			label := ""
-			if i < len(l.Labels) && l.Labels[i] != "" {
-				label = fmt.Sprintf(`|"%s"|`, l.Labels[i])
-			}
-			fmt.Fprintf(sb, "\t%s %s%s %s\n", head, style, label, tail)
-		}
-
+		l.renderWithMultipleLabels(sb, heads, tails, isManyToOne)
 	case len(l.Labels) == 1:
-		label := fmt.Sprintf(`|"%s"|`, l.Labels[0])
-		fmt.Fprintf(sb, "\t%s %s%s %s\n",
-			strings.Join(heads, " & "),
-			l.DefaultStyle,
-			label,
-			strings.Join(tails, " & "))
-
+		l.renderWithSingleLabel(sb, heads, tails)
 	default:
-		fmt.Fprintf(sb, "\t%s %s %s\n",
-			strings.Join(heads, " & "),
-			l.DefaultStyle,
-			strings.Join(tails, " & "))
+		l.renderWithoutLabels(sb, heads, tails)
 	}
+}
+
+func (l *FlowchartLink) renderWithMultipleLabels(
+	sb *strings.Builder,
+	heads []string,
+	tails []string,
+	isManyToOne bool,
+) {
+	count := len(heads)
+	if !isManyToOne {
+		count = len(tails)
+	}
+
+	for i := range count {
+		head := heads[0]
+		tail := tails[0]
+
+		if isManyToOne {
+			head = heads[i]
+		} else if i < len(tails) {
+			tail = tails[i]
+		}
+
+		style := l.DefaultStyle
+		if i < len(l.Styles) && l.Styles[i] != "" {
+			style = l.Styles[i]
+		}
+
+		label := ""
+		if i < len(l.Labels) && l.Labels[i] != "" {
+			label = fmt.Sprintf("|%s|", l.Labels[i])
+		}
+
+		_, _ = fmt.Fprintf(sb, "\t%s %s%s %s\n", head, style, label, tail)
+	}
+}
+
+func (l *FlowchartLink) renderWithSingleLabel(
+	sb *strings.Builder,
+	heads []string,
+	tails []string,
+) {
+	label := fmt.Sprintf("|%s|", l.Labels[0])
+	_, _ = fmt.Fprintf(sb, "\t%s %s%s %s\n",
+		strings.Join(heads, ampersand),
+		l.DefaultStyle,
+		label,
+		strings.Join(tails, ampersand),
+	)
+}
+
+func (l *FlowchartLink) renderWithoutLabels(
+	sb *strings.Builder,
+	heads []string,
+	tails []string,
+) {
+	_, _ = fmt.Fprintf(sb, "\t%s %s %s\n",
+		strings.Join(heads, ampersand),
+		l.DefaultStyle,
+		strings.Join(tails, ampersand),
+	)
 }
