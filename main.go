@@ -77,12 +77,12 @@ func main() {
 		},
 	}
 
-	err := f.RenderUpdateREADME("README.md")
-	//t, err := f.Render()
-	//fmt.Println(t)
+	//err := f.RenderUpdateREADME("README.md")
+	t, err := f.Render()
+	fmt.Println(t)
 	fmt.Println(err)
-	//out := s.RenderUpdateREADME("README.md")
-	out, err1 := s.Render()
+	out := s.RenderUpdateREADME("README.md")
+	//out, err1 := s.Render()
 	fmt.Println(out)
-	fmt.Println(err1)
+	//fmt.Println(err1)
 }
