@@ -1,1 +1,1 @@
-module mermaid
+module github.com/D-NRG/mermaid
